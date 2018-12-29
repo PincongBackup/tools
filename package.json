@@ -1,0 +1,23 @@
+{
+  "name": "pincong-backup-tools",
+  "version": "1.0.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/PincongBackup/tools.git"
+  },
+  "bugs": {
+    "url": "https://github.com/PincongBackup/tools/issues"
+  },
+  "homepage": "https://github.com/PincongBackup/tools#readme",
+  "license": "MIT",
+  "dependencies": {
+    "fs-extra": "^7.0.1",
+    "http-server": "^0.11.1",
+    "jsdom": "^13.0.0",
+    "node-fetch": "^2.3.0",
+    "socks-proxy-agent": "^4.0.1"
+  },
+  "scripts": {
+    "dev": "http-server ../ -c-1 -p 8080"
+  }
+}
