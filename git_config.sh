@@ -1,5 +1,5 @@
 #!/bin/sh
 
-git config user.email "backup@pin-cong.com"
+git config user.email "PincongBot@pm.me"
 
-git config user.name "PincongBackup"
+git config user.name "PincongBot"
