@@ -18,6 +18,7 @@
     "socks-proxy-agent": "^4.0.1"
   },
   "scripts": {
-    "dev": "http-server ../ -c-1 -p 8080"
+    "build": "cd ../PincongBackup.github.io/ && jekyll build --watch",
+    "dev": "http-server ../PincongBackup.github.io/_site/ -c-1 -p 8080"
   }
 }

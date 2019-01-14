@@ -1,20 +1,20 @@
 // @ts-check
 const fs = require("fs-extra")
 const path = require("path")
-const { fetch, getProxyAgent } = require("./util")
-const { cx, key } = require("./api_key")
+const { fetch, getProxyAgent } = require("../util")
+const { cx, token } = require("./api_key")
 
 const agent = getProxyAgent()
 
-const baseFilePath = "../google_cached/"
-const apiURL = `https://www.googleapis.com/customsearch/v1?q=site%3Awww.pin-cong.com&cx=${cx}&prettyPrint=true&key=${key}&start=`
+const baseFilePath = "../../google_cached/"
+const apiURL = `https://cse.google.com/cse/element/v1?cx=${cx}&cse_tok=${token}&q=site%3Apin-cong.com&safe=off&callback=cb&start=`
 
 /**
  * @param {number} start 
  */
 const download = async (start) => {
     const end = start + 9
-    const saveTo = `${start}-${end}.json`
+    const saveTo = `cse-${start}-${end}.json`
 
     try {
         const r = await fetch(apiURL + start, {
@@ -49,7 +49,7 @@ const download = async (start) => {
 
 const downloadAll = async () => {
 
-    for (let i = 1; i <= 5060; i += 10) {
+    for (let i = 1; i <= 298; i += 10) {
         await download(i)
     }
 
