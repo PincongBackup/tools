@@ -130,8 +130,9 @@ const getAnswerUserName = (answerDiv) => {
  * @param {Element} answerDiv 
  */
 const getAnswerUserIntro = (answerDiv) => {
-    const userIntro = answerDiv.querySelector("span.post-user-intro").textContent.trim()
-    return userIntro.replace(/^\|(\s+)?/, "")
+    /** @type {HTMLSpanElement} */
+    const userIntroSpan = answerDiv.querySelector("span.post-user-intro")
+    return userIntroSpan.title
 }
 
 /**
@@ -281,6 +282,4 @@ const main = async () => {
 
 }
 
-// main()
-
-handler(path.join(baseFilePath, "248", "index.html"))
+main()
