@@ -30,8 +30,8 @@ const saveMetaData = (file, metadata) => {
     )
 }
 
-const failed = new Set(loadMetaData("uploads_failed.json"))
-const successful = new Set(loadMetaData("uploads_successful.json"))
+const failed = new Set(loadMetaData("failed.json"))
+const successful = new Set(loadMetaData("successful.json"))
 
 
 /**
@@ -93,8 +93,8 @@ const downloadAll = async (pages) => {
         })
     )
 
-    saveMetaData("uploads_failed.json", failed)
-    saveMetaData("uploads_successful.json", successful)
+    saveMetaData("failed.json", failed)
+    saveMetaData("successful.json", successful)
 
     console.log(successful.size + " 项下载成功")
     console.log(failed.size + " 项下载失败")
@@ -106,7 +106,7 @@ const main = async (start = 0) => {
     /** @type {Page[]} */
     const cachedPages = await fs.readJSON("./cached_pages.json")
 
-    // 绕过网站的并发限制
+    // 绕过网站的并发限制，Google 对爬虫的限制非常严格，每126个请求就必须更换代理
     const n = 2
     for (let i = start; i <= cachedPages.length; i = i + n) {
         await downloadAll(cachedPages.slice(i, i + n))
