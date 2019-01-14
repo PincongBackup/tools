@@ -5,8 +5,8 @@ const { parse: pathParse } = require("path")
 
 // https://web.archive.org/cdx/search?url=pin-cong.com/&matchType=prefix&collapse=urlkey&output=json&fl=original,timestamp&filter=!statuscode:[45]..&limit=100000
 
-const inputFilePath = "../cache/archive_org.json"
-const outputFilePath = "../cache/archive_org_formatted.json"
+const inputFilePath = "../../cache/archive_org.json"
+const outputFilePath = "../../cache/archive_org_formatted.json"
 const baseURL = "https://web.archive.org/web/2019/"
 
 /** @type {String[][]} */
