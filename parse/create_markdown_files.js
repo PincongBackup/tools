@@ -4,6 +4,16 @@ const path = require("path")
 const yaml = require("js-yaml")
 const { JSDOM } = require("jsdom")
 
+const TurndownService = require("turndown")
+const turndownService = new TurndownService({
+    hr: "---",
+    codeBlockStyle: "fenced",
+    emDelimiter: "*",
+    defaultReplacement(innerHTML, node) {  // 处理 Markdown 不支持的元素，输出其 outerHTML
+        return node.isBlock ? "\n\n" + node.outerHTML + "\n\n" : node.outerHTML
+    },
+})
+
 const baseFilePath = "../../p/"
 const baseMarkdownFilePath = "../../PincongBackup.github.io/"
 
@@ -20,7 +30,12 @@ const getQuestionTitle = (questionDiv) => {
  * @param {Element} div 
  */
 const getContent = (div) => {
-    return div.querySelector("div.post-text-detail").innerHTML.trim()
+    const html = div.querySelector("div.post-text-detail").innerHTML
+    const htmlPrettier = html.split("\n").map(x => x.trim()).join("\n")
+
+    const markdown = turndownService.turndown(htmlPrettier)
+
+    return markdown
 }
 
 /**
@@ -227,7 +242,7 @@ const handler = async (filePath) => {
 
     const questionMDFPath = path.join(baseMarkdownFilePath, "_p", questionPostID + ".md")
     const questionMDFContent = createQuestionMarkdownFileContent(questionDiv)
-    
+
     await fs.writeFile(questionMDFPath, questionMDFContent)
 
     /**
