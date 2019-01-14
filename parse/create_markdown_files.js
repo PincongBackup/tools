@@ -5,6 +5,7 @@ const yaml = require("js-yaml")
 const { JSDOM } = require("jsdom")
 
 const baseFilePath = "../../p/"
+const baseMarkdownFilePath = "../../PincongBackup.github.io/"
 
 /**
  * 获取问题标题
@@ -15,19 +16,19 @@ const getQuestionTitle = (questionDiv) => {
 }
 
 /**
- * 获取问题正文
- * @param {Element} questionDiv 
+ * 获取问题或回答正文
+ * @param {Element} div 
  */
-const getQuestionContent = (questionDiv) => {
-    return questionDiv.querySelector("div.post-text-detail").innerHTML.trim()
+const getContent = (div) => {
+    return div.querySelector("div.post-text-detail").innerHTML.trim()
 }
 
 /**
- * 获取问题发布日期
- * @param {Element} questionDiv 
+ * 获取发布日期
+ * @param {Element} div 
  */
-const getQuestionCreatedDate = (questionDiv) => {
-    const dateSpan = questionDiv.querySelector("span[itemprop='dateCreated']")
+const getCreatedDate = (div) => {
+    const dateSpan = div.querySelector("span[itemprop='dateCreated']")
     const date = dateSpan.attributes.getNamedItem("content").value
 
     // 转换为 UTC 形式，采用 ISO 8601 格式
@@ -46,19 +47,19 @@ const getQuestionTags = (questionDiv) => {
 }
 
 /**
- * 获取问题的赞同数量
- * @param {Element} questionDiv 
+ * 获取赞同数量
+ * @param {Element} div 
  */
-const getQuestionUpvoteNumber = (questionDiv) => {
-    return +questionDiv.querySelector("span.upvote span.count-wrap").textContent.trim()
+const getUpvoteNumber = (div) => {
+    return +div.querySelector("span.upvote span.count-wrap").textContent.trim()
 }
 
 /**
- * 获取问题的反对数
- * @param {Element} questionDiv 
+ * 获取反对数
+ * @param {Element} div 
  */
-const getQuestionDownvoteNumber = (questionDiv) => {
-    return +questionDiv.querySelector("span.downvote span.count-wrap").textContent.trim()
+const getDownvoteNumber = (div) => {
+    return +div.querySelector("span.downvote span.count-wrap").textContent.trim()
 }
 
 /**
@@ -75,11 +76,11 @@ const getQuestionFollowersNumber = (questionDiv) => {
 }
 
 /**
- * 获取问题的评论数
- * @param {Element} questionDiv 
+ * 获取评论数
+ * @param {Element} div 
  */
-const getQuestionCommentsNumber = (questionDiv) => {
-    const commentsSpan = questionDiv.querySelector("span.view-comment")
+const getCommentsNumber = (div) => {
+    const commentsSpan = div.querySelector("span.view-comment")
     return +commentsSpan.attributes.getNamedItem("count").value || 0
 }
 
@@ -93,34 +94,75 @@ const makeCommentsArray = (commentsNumber) => {
 }
 
 /**
- * 
- * @param {any} obj 
+ * 获取回答者的uid
+ * @param {Element} answerDiv 
  */
-const createYAMLFrontMatter = (obj) =>{
-
+const getAnswerUserID = (answerDiv) => {
+    const userNameSpan = answerDiv.querySelector("span.post-user-name")
+    return userNameSpan.attributes.getNamedItem("uid").value
 }
 
 /**
- * 创建备份品葱问题的 Markdown 文件
- * @param {Element} questionDiv 
+ * 获取回答者的用户名
+ * @param {Element} answerDiv 
  */
-const createQuestionMarkdownFile = (questionDiv) => {
-    const title = getQuestionTitle(questionDiv)
-    const date = getQuestionCreatedDate(questionDiv)
-    const tags = getQuestionTags(questionDiv)
+const getAnswerUserName = (answerDiv) => {
+    return answerDiv.querySelector("a.aw-user-name").textContent.trim()
+}
 
-    const upvote = getQuestionUpvoteNumber(questionDiv)
-    const downvote = getQuestionDownvoteNumber(questionDiv)
-    const follow = getQuestionFollowersNumber(questionDiv)
+/**
+ * 获取回答者的用户自我介绍
+ * @param {Element} answerDiv 
+ */
+const getAnswerUserIntro = (answerDiv) => {
+    const userIntro = answerDiv.querySelector("span.post-user-intro").textContent.trim()
+    return userIntro.replace(/^\|(\s+)?/, "")
+}
 
-    const comments = makeCommentsArray(getQuestionCommentsNumber(questionDiv))
+/**
+ * 获取回答者的用户头像
+ * @param {Element} answerDiv 
+ */
+const getAnswerUserAvatar = (answerDiv) => {
+    /** @type {HTMLImageElement} */
+    const img = answerDiv.querySelector(".post-detail-user-box img")
 
-    const content = getQuestionContent(questionDiv)
+    // 去掉用户头像的 URL 前缀，例如：https://pin-cong.com
+    return img.src.match(/\/static\/upload\/.+/)[0]
+}
 
-    // 生成 YAML 头信息
+/**
+ * 生成 YAML 头信息
+ * @param {any} obj 
+ */
+const createYAMLFrontMatter = (obj) => {
     const yamlFrontMatter =
         "---\n" +
-        yaml.safeDump({
+        yaml.safeDump(obj, { indent: 4 })
+        + "---\n"
+
+    return yamlFrontMatter
+}
+
+/**
+ * 生成备份品葱问题的 Markdown 文件内容
+ * @param {Element} questionDiv 
+ */
+const createQuestionMarkdownFileContent = (questionDiv) => {
+    const title = getQuestionTitle(questionDiv)
+    const date = getCreatedDate(questionDiv)
+    const tags = getQuestionTags(questionDiv)
+
+    const upvote = getUpvoteNumber(questionDiv)
+    const downvote = getDownvoteNumber(questionDiv)
+    const follow = getQuestionFollowersNumber(questionDiv)
+
+    const comments = makeCommentsArray(getCommentsNumber(questionDiv))
+
+    const content = getContent(questionDiv)
+
+    const yamlFrontMatter =
+        createYAMLFrontMatter({
             title,
             date,
             tags,
@@ -128,12 +170,44 @@ const createQuestionMarkdownFile = (questionDiv) => {
             downvote,
             follow,
             comments,
-        }, { indent: 4 })
-        + "---\n"
+        })
 
     return yamlFrontMatter + "\n" + content + "\n"
 }
 
+/**
+ * 生成备份品葱回答的 Markdown 文件内容
+ * @param {Element} answerDiv 
+ */
+const createAnswerMarkdownFileContent = (answerDiv) => {
+    const date = getCreatedDate(answerDiv)
+
+    const user_id = +getAnswerUserID(answerDiv)
+    const user_name = getAnswerUserName(answerDiv)
+    const user_intro = getAnswerUserIntro(answerDiv)
+    const user_avatar = getAnswerUserAvatar(answerDiv)
+
+    const upvote = getUpvoteNumber(answerDiv)
+    const downvote = getDownvoteNumber(answerDiv)
+
+    const comments = makeCommentsArray(getCommentsNumber(answerDiv))
+
+    const content = getContent(answerDiv)
+
+    const yamlFrontMatter =
+        createYAMLFrontMatter({
+            date,
+            user_id,
+            user_name,
+            user_intro,
+            user_avatar,
+            upvote,
+            downvote,
+            comments,
+        })
+
+    return yamlFrontMatter + "\n" + content + "\n"
+}
 
 /**
  * @param {string} filePath 
@@ -143,8 +217,36 @@ const handler = async (filePath) => {
 
     const { window: { document } } = new JSDOM(html)
 
+    /**
+     * 创建备份提问的 Markdown 文件
+     */
+
+    /** @type {HTMLDivElement} */
     const questionDiv = document.querySelector("span[itemtype='http://schema.org/Question'] > div")
-    console.log(createQuestionMarkdownFile(questionDiv))
+    const questionPostID = questionDiv.dataset.mainpost
+
+    const questionMDFPath = path.join(baseMarkdownFilePath, "_p", questionPostID + ".md")
+    const questionMDFContent = createQuestionMarkdownFileContent(questionDiv)
+    
+    await fs.writeFile(questionMDFPath, questionMDFContent)
+
+    /**
+     * 创建备份回答的 Markdown 文件
+     */
+
+    /** @type {NodeListOf<HTMLDivElement>} */
+    const answerDivList = document.querySelectorAll("div.post-answer-wrap > div")
+
+    answerDivList.forEach((answerDiv) => {
+        const answerPostID = answerDiv.dataset.mainpost
+
+        const answerMDFPath = path.join(baseMarkdownFilePath, "_answers", questionPostID, answerPostID + ".md")
+        const answerMDFContent = createAnswerMarkdownFileContent(answerDiv)
+
+        fs.ensureDirSync(path.parse(answerMDFPath).dir)
+
+        fs.writeFile(answerMDFPath, answerMDFContent)
+    })
 
 }
 
