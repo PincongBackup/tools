@@ -273,28 +273,34 @@ const handler = async (questionPostID) => {
     /** @type {HTMLDivElement} */
     const questionDiv = document.querySelector("span[itemtype='http://schema.org/Question'] > div.post-body")
 
-    const questionMDFPath = path.join(baseMarkdownFilePath, "_p", questionPostID + ".md")
-    const questionMDFContent = createQuestionMarkdownFileContent(questionDiv)
+    console.log("postID:", questionPostID)
 
-    await fs.writeFile(questionMDFPath, questionMDFContent)
+    try {
+        const questionMDFPath = path.join(baseMarkdownFilePath, "_p", questionPostID + ".md")
+        const questionMDFContent = createQuestionMarkdownFileContent(questionDiv)
 
-    /**
-     * 创建备份回答的 Markdown 文件
-     */
+        await fs.writeFile(questionMDFPath, questionMDFContent)
 
-    /** @type {NodeListOf<HTMLDivElement>} */
-    const answerDivList = document.querySelectorAll("div.post-answer-wrap > div")
+        /**
+         * 创建备份回答的 Markdown 文件
+         */
 
-    answerDivList.forEach((answerDiv) => {
-        const answerPostID = answerDiv.dataset.mainpost
+        /** @type {NodeListOf<HTMLDivElement>} */
+        const answerDivList = document.querySelectorAll("div.post-answer-wrap > div.post-body-wrap")
 
-        const answerMDFPath = path.join(baseMarkdownFilePath, "_answers", questionPostID, answerPostID + ".md")
-        const answerMDFContent = createAnswerMarkdownFileContent(answerDiv)
+        answerDivList.forEach((answerDiv) => {
+            const answerPostID = answerDiv.dataset.mainpost
 
-        fs.ensureDirSync(path.parse(answerMDFPath).dir)
+            const answerMDFPath = path.join(baseMarkdownFilePath, "_answers", questionPostID, answerPostID + ".md")
+            const answerMDFContent = createAnswerMarkdownFileContent(answerDiv)
 
-        fs.writeFile(answerMDFPath, answerMDFContent)
-    })
+            fs.ensureDirSync(path.parse(answerMDFPath).dir)
+
+            fs.writeFile(answerMDFPath, answerMDFContent)
+        })
+    } catch (e) {
+        console.error(e)
+    }
 
 }
 
