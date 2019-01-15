@@ -14,6 +14,18 @@ const turndownService = new TurndownService({
     },
 })
 
+turndownService.addRule("div", {
+    filter(node) {
+        return (
+            node.nodeName == "DIV" &&
+            node.getAttributeNames().length == 0
+        )
+    },
+    replacement(content) {
+        return content
+    }
+})
+
 const baseFilePath = "../../p/"
 const baseMarkdownFilePath = "../../PincongBackup.github.io/"
 
@@ -44,7 +56,7 @@ const getContent = (div) => {
  */
 const getCreatedDate = (div) => {
     const dateSpan = div.querySelector("span[itemprop='dateCreated']")
-    const date = dateSpan.attributes.getNamedItem("content").value
+    const date = dateSpan.getAttribute("content")
 
     // 转换为 UTC 形式，采用 ISO 8601 格式
     return new Date(date).toISOString()
@@ -96,7 +108,7 @@ const getQuestionFollowersNumber = (questionDiv) => {
  */
 const getCommentsNumber = (div) => {
     const commentsSpan = div.querySelector("span.view-comment")
-    return +commentsSpan.attributes.getNamedItem("count").value || 0
+    return +commentsSpan.getAttribute("count") || 0
 }
 
 /**
@@ -114,7 +126,7 @@ const makeCommentsArray = (commentsNumber) => {
  */
 const getAnswerUserID = (answerDiv) => {
     const userNameSpan = answerDiv.querySelector("span.post-user-name")
-    return userNameSpan.attributes.getNamedItem("uid").value
+    return userNameSpan.getAttribute("uid")
 }
 
 /**
@@ -226,9 +238,12 @@ const createAnswerMarkdownFileContent = (answerDiv) => {
 }
 
 /**
- * @param {string} filePath 
+ * @param {string} questionPostID
  */
-const handler = async (filePath) => {
+const handler = async (questionPostID) => {
+
+    const filePath = path.join(baseFilePath, questionPostID, "index.html")
+
     const html = await fs.readFile(filePath, "utf-8")
 
     const { window: { document } } = new JSDOM(html)
@@ -238,8 +253,7 @@ const handler = async (filePath) => {
      */
 
     /** @type {HTMLDivElement} */
-    const questionDiv = document.querySelector("span[itemtype='http://schema.org/Question'] > div")
-    const questionPostID = questionDiv.dataset.mainpost
+    const questionDiv = document.querySelector("span[itemtype='http://schema.org/Question'] > div.post-body")
 
     const questionMDFPath = path.join(baseMarkdownFilePath, "_p", questionPostID + ".md")
     const questionMDFContent = createQuestionMarkdownFileContent(questionDiv)
@@ -275,8 +289,7 @@ const main = async () => {
             }).sort((a, b) => {
                 return +a - +b
             }).map((x) => {
-                const filePath = path.join(baseFilePath, x, "index.html")
-                return handler(filePath)
+                return handler(x)
             })
     )
 
