@@ -14,16 +14,34 @@ const turndownService = new TurndownService({
     },
 })
 
-turndownService.addRule("div", {
+turndownService.addRule("div_span", {
+
+    /**
+     * @param {Element} node 
+     */
     filter(node) {
         return (
-            node.nodeName == "DIV" &&
-            node.getAttributeNames().length == 0
+            (
+                node.nodeName == "DIV" ||
+                node.nodeName == "SPAN"
+            ) &&
+            (
+                node.getAttributeNames().length == 0 ||
+                // 元素的属性都为空
+                !node.getAttributeNames().some((name) => {
+                    return !!node.getAttribute(name)
+                })
+            )
         )
     },
+
+    /**
+     * @param {string} content 
+     */
     replacement(content) {
         return content
     }
+
 })
 
 const baseFilePath = "../../p/"
