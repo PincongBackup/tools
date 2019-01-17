@@ -30,7 +30,14 @@ turndownService.addRule("div_span", {
                 // 元素的属性都为空
                 !node.getAttributeNames().some((name) => {
                     return !!node.getAttribute(name)
-                })
+                }) ||
+                (
+                    node.getAttributeNames().length == 1 &&
+                    ( 
+                        node.getAttribute("class") == "longText" ||
+                        node.classList.contains("picBox") 
+                    )
+                )
             )
         )
     },
@@ -295,6 +302,34 @@ const createArticleMarkdownFileContent = (articleDiv) => {
 }
 
 /**
+ * 生成备份新闻话题的 Markdown 文件内容
+ * @param {Element} newsDiv 
+ */
+const createNewsMarkdownFileContent = (newsDiv) => {
+    const title = getTitle(newsDiv)
+    const date = getCreatedDate(newsDiv)
+
+    const upvote = getUpvoteNumber(newsDiv)
+    const downvote = getDownvoteNumber(newsDiv)
+
+    const comments = makeCommentsArray(getCommentsNumber(newsDiv))
+
+    const content = getContent(newsDiv)
+
+    const yamlFrontMatter =
+        createYAMLFrontMatter({
+            title,
+            date,
+            upvote,
+            downvote,
+            comments,
+        })
+
+    return yamlFrontMatter + "\n" + content + "\n"
+
+}
+
+/**
  * @param {string} questionPostID
  */
 const handler = async (questionPostID) => {
@@ -318,12 +353,26 @@ const handler = async (questionPostID) => {
 
     try {
 
-        if (topicDetailDiv && topicDetailDiv.textContent.trim() == "专栏文章") {
+        if (topicDetailDiv) {
+            const postType = topicDetailDiv.textContent.trim()
 
-            const articleMDFPath = path.join(baseMarkdownFilePath, "_articles", questionPostID + ".md")
-            const articleMDFContent = createArticleMarkdownFileContent(questionDiv)
+            if (postType == "专栏文章") {
 
-            await fs.writeFile(articleMDFPath, articleMDFContent)
+                const articleMDFPath = path.join(baseMarkdownFilePath, "_articles", questionPostID + ".md")
+                const articleMDFContent = createArticleMarkdownFileContent(questionDiv)
+
+                await fs.writeFile(articleMDFPath, articleMDFContent)
+
+            } else if (postType == "新闻话题") {
+
+                const newsMDFPath = path.join(baseMarkdownFilePath, "_news", questionPostID + ".md")
+                const newsMDFContent = createNewsMarkdownFileContent(questionDiv)
+
+                await fs.writeFile(newsMDFPath, newsMDFContent)
+
+            } else {
+                throw new Error(`unknown postType '${postType}'`)
+            }
 
         } else {
             const questionMDFPath = path.join(baseMarkdownFilePath, "_p", questionPostID + ".md")
