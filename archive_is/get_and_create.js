@@ -18,23 +18,28 @@ const turndownService = new TurndownService({
     },
 })
 
-turndownService.addRule("div_span", {
+turndownService.addRule("span", {
 
-    /**
-     * @param {Element} node 
-     */
-    filter(node) {
-        return (
-            node.nodeName == "DIV" ||
-            node.nodeName == "SPAN"
-        )
-    },
+    filter: "span",
 
     /**
      * @param {string} content 
      */
     replacement(content) {
         return content
+    }
+
+})
+
+turndownService.addRule("div", {
+
+    filter: "div",
+
+    /**
+     * @param {string} content 
+     */
+    replacement(content) {
+        return "\n" + content + "\n\n"
     }
 
 })
