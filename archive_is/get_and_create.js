@@ -284,7 +284,7 @@ const createArticleMarkdownFileContent = async (articleDiv) => {
     const { user_id, user_name, user_avatar } = getArticleUserInfo(userDiv)
 
     const upvote = +upvotersDiv.textContent.trim().match(/(\d+)人赞过/)[1]
-    
+
     const commentsNumber = +commentsDiv.textContent.match(/(\d+)\s+条评论/)[1] || 0
     const comments = makeCommentsArray(commentsNumber)
 
@@ -325,12 +325,25 @@ const get = async (url) => {
             const html = await r.textConverted()
             const { window: { document } } = new JSDOM(html)
 
-            const bodyDiv = document.querySelector(".body > div:nth-child(2) > div:nth-child(4) > div:nth-child(3) > div:nth-child(1) > div:nth-child(1)")
+            let bodyDiv = document.querySelector(".body > div:nth-child(2) > div:nth-child(4) > div:nth-child(3) > div:nth-child(1) > div:nth-child(1)")
+            if (!bodyDiv) {
+
+                // 删除空白 span 节点
+                document.querySelectorAll(".body span").forEach((span) => {
+                    if (span.children.length == 0) {
+                        span.remove()
+                    }
+                })
+
+                bodyDiv = document.querySelector("div.body:nth-child(4) > div:nth-child(2) > div:nth-child(3) > div:nth-child(1) > div:nth-child(1)")
+            }
 
             const postTypeH3 = bodyDiv.children[0].children[0].children[0]
             const isArticle = postTypeH3.nodeName == "H3" && !!postTypeH3.textContent.trim().match(/^专栏文章/m)
 
-            const questionOrArticleDiv = Array.prototype.slice.call(bodyDiv.children[0].children, -1)[0]
+            const questionOrArticleDiv = bodyDiv.children[0].children.length <= 2
+                ? Array.prototype.slice.call(bodyDiv.children[0].children, -1)[0]
+                : bodyDiv.children[0]
 
             let mainPostId = ""
             if (isArticle) {
