@@ -68,7 +68,7 @@ const baseMarkdownFilePath = "../../PincongBackup.github.io/"
 const usersFilePath = "../../PincongBackup.github.io/_site/data/users.json"
 
 /** 
- * @typedef {{ user_id?: number; user_name: string; user_intro: string; user_avatar?: string; }} UserInfo 
+ * @typedef {{ user_id?: number; user_name: string; user_intro?: string; user_avatar?: string; }} UserInfo 
  */
 
 /** @type {{ user_id: string; user_name: string; user_intro: string; user_avatar: string; answers: Object[]; }[]} */
@@ -120,7 +120,7 @@ const makeCommentsArray = (commentsNumber) => {
 
 
 /**
- * 获取问题的标签
+ * 获取问题或专栏文章的标签
  * @param {Element} tagsDiv
  * @returns {string[]}
  */
@@ -133,7 +133,7 @@ const getTags = (tagsDiv) => {
 }
 
 /**
- * 获取问题或回答正文
+ * 获取正文
  * @param {Element} contentDiv 
  */
 const getContent = (contentDiv) => {
@@ -150,7 +150,7 @@ const getContent = (contentDiv) => {
  * @param {Element} userDiv 
  * @returns {UserInfo}
  */
-const getUserInfo = (userDiv) => {
+const getAnswerUserInfo = (userDiv) => {
     const userName = userDiv.children[0].querySelector("a").text.trim()
 
     const result = usersDataMap.get(userName)
@@ -165,6 +165,19 @@ const getUserInfo = (userDiv) => {
             user_intro: userIntro && userIntro.trim()
         }
     }
+}
+
+/**
+ * 获取专栏文章作者的用户信息
+ * @param {Element} userDiv 
+ * @returns {UserInfo}
+ */
+const getArticleUserInfo = (userDiv) => {
+    const userName = userDiv.textContent.trim()
+
+    const result = usersDataMap.get(userName)
+
+    return result || { user_name: userName }
 }
 
 
@@ -223,7 +236,7 @@ const createAnswerMarkdownFileContent = async (answerDiv) => {
 
     const date = (await getCreatedDate(+postId)).toISOString()
 
-    const { user_id, user_name, user_intro, user_avatar } = getUserInfo(userDiv)
+    const { user_id, user_name, user_intro, user_avatar } = getAnswerUserInfo(userDiv)
 
     const upvote = +upvotersDiv.textContent.trim().match(/(\d+)人赞同/)[1]
 
@@ -252,6 +265,52 @@ const createAnswerMarkdownFileContent = async (answerDiv) => {
 }
 
 /**
+ * 生成备份专栏文章的 Markdown 文件内容
+ * @param {Element} articleDiv 
+ */
+const createArticleMarkdownFileContent = async (articleDiv) => {
+
+    const [tagsDiv, , titleDiv, userDiv, bodyTopDiv] = articleDiv.children
+    const [postIdA, bodyDiv] = bodyTopDiv.children
+    const [upvotersDiv, contentTopDiv, , commentsDiv] = bodyDiv.children
+    const contentDiv = contentTopDiv.children[0].children[0]
+
+    const postId = postIdA.getAttribute("name")
+    const date = (await getCreatedDate(+postId)).toISOString()
+
+    const tags = getTags(tagsDiv)
+    const title = titleDiv.textContent.trim()
+
+    const { user_id, user_name, user_avatar } = getArticleUserInfo(userDiv)
+
+    const upvote = +upvotersDiv.textContent.trim().match(/(\d+)人赞过/)[1]
+    
+    const commentsNumber = +commentsDiv.textContent.match(/(\d+)\s+条评论/)[1] || 0
+    const comments = makeCommentsArray(commentsNumber)
+
+    const content = getContent(contentDiv)
+
+    const yamlFrontMatter =
+        createYAMLFrontMatter({
+            title,
+            date,
+            user_id,
+            user_name,
+            user_avatar,
+            tags,
+            upvote,
+            downvote: 0,
+            comments,
+        })
+
+    return {
+        postId: postId,
+        markdownFileContent: yamlFrontMatter + "\n" + content + "\n"
+    }
+
+}
+
+/**
  * @param {string} url 
  */
 const get = async (url) => {
@@ -268,11 +327,23 @@ const get = async (url) => {
 
             const bodyDiv = document.querySelector(".body > div:nth-child(2) > div:nth-child(4) > div:nth-child(3) > div:nth-child(1) > div:nth-child(1)")
 
-            const questionDiv = Array.prototype.slice.call(bodyDiv.children[0].children, -1)[0]
+            const postTypeH3 = bodyDiv.children[0].children[0].children[0]
+            const isArticle = postTypeH3.nodeName == "H3" && !!postTypeH3.textContent.trim().match(/^专栏文章/m)
 
-            const { postId: questionPostID, markdownFileContent: questionMDFContent } = await createQuestionMarkdownFileContent(questionDiv)
-            const questionMDFPath = path.join(baseMarkdownFilePath, "_p", questionPostID + ".md")
-            await fs.writeFile(questionMDFPath, questionMDFContent)
+            const questionOrArticleDiv = Array.prototype.slice.call(bodyDiv.children[0].children, -1)[0]
+
+            let mainPostId = ""
+            if (isArticle) {
+                const { postId: articlePostID, markdownFileContent: articleMDFContent } = await createArticleMarkdownFileContent(questionOrArticleDiv)
+                const articleMDFPath = path.join(baseMarkdownFilePath, "_articles", articlePostID + ".md")
+                await fs.writeFile(articleMDFPath, articleMDFContent)
+                mainPostId = articlePostID
+            } else {
+                const { postId: questionPostID, markdownFileContent: questionMDFContent } = await createQuestionMarkdownFileContent(questionOrArticleDiv)
+                const questionMDFPath = path.join(baseMarkdownFilePath, "_p", questionPostID + ".md")
+                await fs.writeFile(questionMDFPath, questionMDFContent)
+                mainPostId = questionPostID
+            }
 
             const answersDiv = bodyDiv.children[1]
             const answerDivList = [...answersDiv.children].slice(0, -1)
@@ -280,7 +351,7 @@ const get = async (url) => {
             answerDivList.forEach(async (answerDiv) => {
                 const { postId: answerPostID, markdownFileContent: answerMDFContent } = await createAnswerMarkdownFileContent(answerDiv)
 
-                const answerMDFPath = path.join(baseMarkdownFilePath, "_answers", questionPostID, answerPostID + ".md")
+                const answerMDFPath = path.join(baseMarkdownFilePath, "_answers", mainPostId, answerPostID + ".md")
 
                 fs.ensureDirSync(path.parse(answerMDFPath).dir)
 
