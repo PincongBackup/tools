@@ -33,7 +33,10 @@ const handler = async (fileName, index) => {
     titleElement.outerHTML = `<b>${titleElement.textContent.trim()}</b><br>`
 
     const addressElement = document.querySelector("article#_tl_editor > address")
-    addressElement.innerHTML = "<br><br>[i]@" + addressElement.textContent.trim() + "：[/i]<br><br>"
+    const author = addressElement.textContent.trim()
+    if (author) {
+        addressElement.innerHTML = "<br><br>[i]@" + author + "：[/i]<br><br>"
+    }
 
     const imgs = articleElement.querySelectorAll("img")
     await Promise.all(
@@ -74,7 +77,7 @@ const handler = async (fileName, index) => {
 const main = async (start = 0) => {
 
     /** @type {{ link: string; }[]} */
-    const officialList = (await fs.readJSON(officialListFilePath)).slice(0, 737)
+    const officialList = (await fs.readJSON(officialListFilePath)).slice(0, 736)
 
     /** @type {{ link: string; messageLink: string; }[]} */
     const list = await fs.readJSON(listFilePath)
@@ -98,7 +101,7 @@ const main = async (start = 0) => {
         }
     })
 
-    const n = 10
+    const n = 2
     for (let i = start; i <= l.length; i = i + n) {
 
         await Promise.all(

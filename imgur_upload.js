@@ -28,7 +28,7 @@ const upload = async (image) => {
 
     if (!json.success) {
         console.error("status:", json.status)
-        throw new Error(json.data.error)
+        throw new Error(JSON.stringify(json.data.error))
     }
 
     return json.data.link
