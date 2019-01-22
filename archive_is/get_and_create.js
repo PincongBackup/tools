@@ -98,6 +98,9 @@ const usersDataMap = new Map(
  * @param {any} obj 
  */
 const createYAMLFrontMatter = (obj) => {
+    // 去除 undefined
+    obj = JSON.parse(JSON.stringify(obj))
+
     const yamlFrontMatter =
         "---\n" +
         yaml.safeDump(obj, { indent: 4 })
@@ -265,7 +268,7 @@ const get = async (url) => {
 
             const bodyDiv = document.querySelector(".body > div:nth-child(2) > div:nth-child(4) > div:nth-child(3) > div:nth-child(1) > div:nth-child(1)")
 
-            const questionDiv = bodyDiv.children[0].children[0]
+            const questionDiv = Array.prototype.slice.call(bodyDiv.children[0].children, -1)[0]
 
             const { postId: questionPostID, markdownFileContent: questionMDFContent } = await createQuestionMarkdownFileContent(questionDiv)
             const questionMDFPath = path.join(baseMarkdownFilePath, "_p", questionPostID + ".md")
@@ -290,6 +293,8 @@ const get = async (url) => {
         }
     } catch (e) {
         console.error(url + " " + e)
+        // console.error(url)
+        // console.error(e)
         return
     }
 
